@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 全てのタスクを取得するハンドラー
 func GetTasks(c *gin.Context) {
 	tasks, err := model.GetAllTasks()
 	if err != nil {
@@ -17,6 +18,7 @@ func GetTasks(c *gin.Context) {
 	c.JSON(http.StatusOK, tasks)
 }
 
+// タスクを挿入するハンドラー
 func InsertTask(c *gin.Context) {
 	var task model.Task
 	if err := c.BindJSON(&task); err != nil {
@@ -34,7 +36,7 @@ func InsertTask(c *gin.Context) {
 	c.JSON(http.StatusCreated, task)
 }
 
-// UpdateTask / DeleteTask も同様に書く
+// タスクを更新するハンドラー
 func UpdateTask(c *gin.Context) {
 	var task model.Task
 	if err := c.BindJSON(&task); err != nil {
@@ -57,6 +59,7 @@ func UpdateTask(c *gin.Context) {
 	c.JSON(http.StatusCreated, task)
 }
 
+// タスクを削除するハンドラー
 func DeleteTask(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"todoapp/db"
 	"todoapp/handler"
 
@@ -12,11 +10,6 @@ import (
 
 func main() {
 	db.Init()
-	fmt.Println("DB_HOST:", os.Getenv("DB_HOST"))
-	fmt.Println("DB_PORT:", os.Getenv("DB_PORT"))
-	fmt.Println("DB_USER:", os.Getenv("DB_USER"))
-	fmt.Println("DB_PASSWORD:", os.Getenv("DB_PASSWORD"))
-	fmt.Println("DB_NAME:", os.Getenv("DB_NAME"))
 
 	r := gin.Default()
 
@@ -28,5 +21,5 @@ func main() {
 	r.PUT("/tasks", handler.UpdateTask)
 	r.DELETE("/tasks/:id", handler.DeleteTask)
 
-	r.Run(":8080") // 8080番ポートで起動
+	r.Run(":8080")
 }

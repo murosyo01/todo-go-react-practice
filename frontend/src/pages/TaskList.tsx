@@ -1,4 +1,25 @@
 import { useEffect, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter,
+    DialogHeader,
+} from "@/components/ui/dialog";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+    FormDescription
+} from "@/components/ui/form";
 
 type Task = {
     id: number;
@@ -33,14 +54,14 @@ export function TaskList() {
     }, []);
 
     if (loading) {
-        return <p>読み込み中</p>;
+        return <Spinner></Spinner>
     }
     if (error) {
         return <p>エラー：{error}</p>
     }
     return (
         <div>
-            <h1>Task List Page</h1>
+            <h1>タスク一覧</h1>
             {tasks.length === 0 ? (
                 <p>タスクがありません。</p>
             ): (
@@ -55,6 +76,7 @@ export function TaskList() {
                         </li>
                     ))}
                 </ul>
+
             )}
         </div>
     );

@@ -5,7 +5,7 @@ import UpdateTask from './pages/UpdateTask'
 import TaskList from './pages/TaskList'
 import './App.css'
 
-function App() {
+const App: React.FC = () => {
   return (
     <Router>
       <Routes>

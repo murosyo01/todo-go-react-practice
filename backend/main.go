@@ -18,7 +18,7 @@ func main() {
 	// APIのルーティング設定
 	r.GET("/tasks", handler.GetTasks)
 	r.POST("/tasks", handler.InsertTask)
-	r.PUT("/tasks", handler.UpdateTask)
+	r.PUT("/tasks/:id", handler.UpdateTask)
 	r.DELETE("/tasks/:id", handler.DeleteTask)
 
 	r.Run(":8080")

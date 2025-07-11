@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { DialogDescription } from "@radix-ui/react-dialog";
-import { Task } from "@/hooks/useTasks";
+import { Task } from "@/types/task";
 
 interface TaskActionDialogProps {
     open: boolean;

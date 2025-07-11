@@ -1,5 +1,5 @@
 import { useDroppable } from "@dnd-kit/core";
-import { Task } from "@/hooks/useTasks";
+import { Task } from "@/types/task";
 import { DraggableTask } from "./DraggableTask";
 
 interface DroppableColumnProps {

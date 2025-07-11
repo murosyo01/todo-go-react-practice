@@ -1,18 +1,9 @@
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Task } from "@/hooks/useTasks";
-
-const FormSchema = z.object({
-    title: z.string().min(1, "タイトルは必須です"),
-    description: z.string().optional(),
-    status: z.enum(["未着手", "進行中", "完了"]),
-});
-
-type FormValues = z.infer<typeof FormSchema>;
+import { Task, TaskFormSchema, TaskFormValues } from "@/types/task";
 
 const columns = ["未着手", "進行中", "完了"] as const;
 
@@ -21,7 +12,7 @@ interface TaskFormDialogProps {
     onOpenChange: (open: boolean) => void;
     isEditMode: boolean;
     selectedTask: Task | null;
-    onSubmit: (data: FormValues) => void;
+    onSubmit: (data: TaskFormValues) => void;
 }
 
 export const TaskFormDialog = ({ 
@@ -31,16 +22,16 @@ export const TaskFormDialog = ({
     selectedTask, 
     onSubmit 
 }: TaskFormDialogProps) => {
-    const form = useForm<FormValues>({
-        resolver: zodResolver(FormSchema),
+    const form = useForm<TaskFormValues>({
+        resolver: zodResolver(TaskFormSchema),
         defaultValues: {
             title: selectedTask?.title || "",
             description: selectedTask?.description || "",
-            status: (selectedTask?.status as "未着手" | "進行中" | "完了") || "未着手",
+            status: selectedTask?.status || "未着手",
         },
     });
 
-    const handleSubmit = (data: FormValues) => {
+    const handleSubmit = (data: TaskFormValues) => {
         onSubmit(data);
         form.reset();
     };

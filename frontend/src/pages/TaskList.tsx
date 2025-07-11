@@ -9,11 +9,13 @@ import {
 } from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { useTasks, Task } from "@/hooks/useTasks";
+import { useTasks } from "@/hooks/useTasks";
+import { Task, TaskFormValues } from "@/types/task";
 import { TaskCard } from "@/components/TaskCard";
 import { DroppableColumn } from "@/components/DroppableColumn";
 import { TaskFormDialog } from "@/components/TaskFormDialog";
 import { TaskActionDialog } from "@/components/TaskActionDialog";
+import { LoadingSpinner, ErrorMessage } from "@/components/LoadingSpinner";
 
 const columns = ["未着手", "進行中", "完了"] as const;
 
@@ -25,7 +27,8 @@ export default function TaskList() {
         createTask, 
         updateTask, 
         deleteTask, 
-        updateTaskStatus 
+        updateTaskStatus,
+        refreshTasks
     } = useTasks();
 
     const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -47,15 +50,19 @@ export default function TaskList() {
         setShowActionDialog(true);
     };
 
-    const handleFormSubmit = (data: any) => {
-        if (isEditMode && selectedTask) {
-            updateTask(selectedTask.id, data);
-        } else {
-            createTask(data);
+    const handleFormSubmit = async (data: TaskFormValues) => {
+        try {
+            if (isEditMode && selectedTask) {
+                await updateTask(selectedTask.id, data);
+            } else {
+                await createTask(data);
+            }
+            setShowEditDialog(false);
+            setSelectedTask(null);
+            setIsEditMode(false);
+        } catch (error) {
+            console.error("Form submission error:", error);
         }
-        setShowEditDialog(false);
-        setSelectedTask(null);
-        setIsEditMode(false);
     };
 
     const handleEditTask = (task: Task) => {
@@ -64,8 +71,12 @@ export default function TaskList() {
         setShowEditDialog(true);
     };
 
-    const handleDeleteTask = (taskId: number) => {
-        deleteTask(taskId);
+    const handleDeleteTask = async (taskId: number) => {
+        try {
+            await deleteTask(taskId);
+        } catch (error) {
+            console.error("Delete task error:", error);
+        }
     };
 
     const handleDragStart = (event: any) => {
@@ -90,8 +101,8 @@ export default function TaskList() {
         setShowEditDialog(true);
     };
 
-    if (loading) return <div className="flex justify-center items-center h-64"><p>Loading...</p></div>;
-    if (error) return <div className="text-red-500 text-center"><p>{error}</p></div>;
+    if (loading) return <LoadingSpinner message="タスクを読み込み中..." />;
+    if (error) return <ErrorMessage error={error} onRetry={refreshTasks} />;
 
     return (
         <div className="p-6 max-w-7xl mx-auto bg-gradient-to-r from-fuchsia-200 from-0% to-cyan-200 to-100%">

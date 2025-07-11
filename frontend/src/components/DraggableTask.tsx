@@ -1,6 +1,6 @@
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { Task } from "@/hooks/useTasks";
+import { Task } from "@/types/task";
 import { TaskCard } from "./TaskCard";
 
 interface DraggableTaskProps {

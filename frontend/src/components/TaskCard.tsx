@@ -1,4 +1,4 @@
-import { Task } from "@/hooks/useTasks";
+import { Task } from "@/types/task";
 
 interface TaskCardProps {
     task: Task;

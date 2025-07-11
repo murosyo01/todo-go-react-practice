@@ -1,78 +1,114 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { Task, TaskFormValues } from "@/types/task";
 
-export type Task = {
-    id: number;
-    title: string;
-    description: string;
-    status: string;
-    created_at: string;
-    updated_at: string;
-};
+interface UseTasksReturn {
+    tasks: Task[];
+    loading: boolean;
+    error: string | null;
+    createTask: (data: TaskFormValues) => Promise<void>;
+    updateTask: (taskId: number, data: Partial<Task>) => Promise<void>;
+    deleteTask: (taskId: number) => Promise<void>;
+    updateTaskStatus: (taskId: number, newStatus: string) => Promise<void>;
+    refreshTasks: () => Promise<void>;
+}
 
-export const useTasks = () => {
+export const useTasks = (): UseTasksReturn => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchTasks = () => {
-        setLoading(true);
-        fetch("http://localhost:8080/tasks")
-            .then((res) => res.json())
-            .then(setTasks)
-            .catch((err) => setError(err.message))
-            .finally(() => setLoading(false));
-    };
+    const refreshTasks = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await fetch("http://localhost:8080/tasks");
+            if (!response.ok) {
+                throw new Error(`Failed to fetch tasks: ${response.statusText}`);
+            }
+            const fetchedTasks = await response.json();
+            setTasks(fetchedTasks);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Unknown error occurred");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-    const createTask = (data: Partial<Task>) => {
-        setLoading(true);
-        fetch("http://localhost:8080/tasks", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-        })
-            .then((res) => res.json())
-            .then(() => fetchTasks())
-            .catch((err) => setError(err.message))
-            .finally(() => setLoading(false));
-    };
+    const createTask = useCallback(async (data: TaskFormValues) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await fetch("http://localhost:8080/tasks", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to create task: ${response.statusText}`);
+            }
+            await refreshTasks();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to create task");
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }, [refreshTasks]);
 
-    const updateTask = (taskId: number, updatedData: Partial<Task>) => {
-        setLoading(true);
-        fetch(`http://localhost:8080/tasks/${taskId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatedData),
-        })
-            .then((res) => res.json())
-            .then(() => fetchTasks())
-            .catch((err) => setError(err.message))
-            .finally(() => setLoading(false));
-    };
+    const updateTask = useCallback(async (taskId: number, data: Partial<Task>) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await fetch(`http://localhost:8080/tasks/${taskId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to update task: ${response.statusText}`);
+            }
+            await refreshTasks();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to update task");
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }, [refreshTasks]);
 
-    const deleteTask = (taskId: number) => {
-        setLoading(true);
-        fetch(`http://localhost:8080/tasks/${taskId}`, {
-            method: "DELETE",
-        })
-            .then(() => fetchTasks())
-            .catch((err) => setError(err.message))
-            .finally(() => setLoading(false));
-    };
+    const deleteTask = useCallback(async (taskId: number) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await fetch(`http://localhost:8080/tasks/${taskId}`, {
+                method: "DELETE",
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to delete task: ${response.statusText}`);
+            }
+            await refreshTasks();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to delete task");
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }, [refreshTasks]);
 
-    const updateTaskStatus = (taskId: number, newStatus: string) => {
+    const updateTaskStatus = useCallback(async (taskId: number, newStatus: string) => {
         const task = tasks.find((t) => t.id === taskId);
         if (!task || task.status === newStatus) return;
         
-        const updatedTask = {
-            ...task,
-            status: newStatus,
-        };
-        updateTask(taskId, updatedTask);
-    };
+        try {
+            await updateTask(taskId, { ...task, status: newStatus });
+        } catch (err) {
+            console.error("Failed to update task status:", err);
+        }
+    }, [tasks, updateTask]);
 
     useEffect(() => {
-        fetchTasks();
-    }, []);
+        refreshTasks();
+    }, [refreshTasks]);
 
     return {
         tasks,
@@ -82,6 +118,6 @@ export const useTasks = () => {
         updateTask,
         deleteTask,
         updateTaskStatus,
-        fetchTasks,
+        refreshTasks,
     };
 };

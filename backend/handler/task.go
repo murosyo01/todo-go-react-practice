@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"time"
 	"todoapp/model"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +28,7 @@ func InsertTask(c *gin.Context) {
 	}
 
 	if task.Status == "" {
-		task.Status = "not_started"
+		task.Status = "未着手"
 	}
 	if err := model.InsertTask(task); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "タスク登録に失敗しました"})
@@ -38,25 +39,44 @@ func InsertTask(c *gin.Context) {
 
 // タスクを更新するハンドラー
 func UpdateTask(c *gin.Context) {
-	var task model.Task
-	if err := c.BindJSON(&task); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "不正なJSONです"})
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "IDが不正です"})
 		return
 	}
 
-	existingTask, err := model.GetTaskByID(task.ID)
+	existingTask, err := model.GetTaskByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "タスクが見つかりません"})
 		return
 	}
-	if task.Status == "" {
-		task.Status = existingTask.Status
+
+	var updateData model.Task
+	if err := c.BindJSON(&updateData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不正なJSONです"})
+		return
 	}
-	if err := model.UpdateTask(task); err != nil {
+
+	// 必要なフィールドだけ更新
+	if updateData.Title != "" {
+		existingTask.Title = updateData.Title
+	}
+	if updateData.Description != "" {
+		existingTask.Description = updateData.Description
+	}
+	if updateData.Status != "" {
+		existingTask.Status = updateData.Status
+	}
+
+	existingTask.UpdatedAt = time.Now()
+
+	if err := model.UpdateTask(existingTask); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "タスクの更新に失敗しました"})
 		return
 	}
-	c.JSON(http.StatusCreated, task)
+
+	c.JSON(http.StatusOK, existingTask)
 }
 
 // タスクを削除するハンドラー

@@ -19,6 +19,7 @@ export type Task = {
     title: string;
     description: string;
     status: Status;
+    user_id: number;
     created_at: string;
     updated_at: string;
 };

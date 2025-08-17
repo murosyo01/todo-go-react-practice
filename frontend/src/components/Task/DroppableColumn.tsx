@@ -10,12 +10,12 @@ interface DroppableColumnProps {
 
 export const DroppableColumn = ({ status, tasks, onTaskClick }: DroppableColumnProps) => {
     const { setNodeRef, isOver } = useDroppable({ id: status });
-    const filteredTasks = tasks.filter((t) => t.status === status);
+    const filteredTasks = (tasks || []).filter((t) => t.status === status);
 
     return (
         <div
             ref={setNodeRef}
-            className={`flex-1 min-h-[500px] border-2 rounded-lg p-4 m-2 bg-gray-50 transition-colors duration-200 ${
+            className={`flex-1 min-h-[300px] lg:min-h-[500px] border-2 rounded-lg p-4 m-2 bg-gray-50 transition-colors duration-200 ${
                 isOver ? 'border-blue-400 bg-blue-50' : 'border-gray-200'
             }`}
         >

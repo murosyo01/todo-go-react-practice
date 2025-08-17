@@ -10,8 +10,20 @@ import (
 )
 
 // 全てのタスクを取得するハンドラー
-func GetTasks(c *gin.Context) {
-	tasks, err := model.GetAllTasks()
+func GetTasksByUser(c *gin.Context) {
+	userIDStr := c.Query("user_id")
+	if userIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ユーザIDが必要です"})
+		return
+	}
+
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不正なユーザIDです"})
+		return
+	}
+
+	tasks, err := model.GetTasksByUserID(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -27,9 +39,15 @@ func InsertTask(c *gin.Context) {
 		return
 	}
 
+	if task.UserID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ユーザIDが必要です"})
+		return
+	}
+
 	if task.Status == "" {
 		task.Status = "未着手"
 	}
+
 	if err := model.InsertTask(task); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "タスク登録に失敗しました"})
 		return
@@ -91,5 +109,5 @@ func DeleteTask(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "タスク削除に失敗しました"})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"message": "削除成功"})
+	c.JSON(http.StatusNoContent, gin.H{"message": "削除成功"})
 }

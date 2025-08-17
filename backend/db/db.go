@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -27,7 +28,19 @@ func Init() {
 		log.Fatalf("Failed to open DB: %v", err)
 	}
 
-	if err := Db.Ping(); err != nil {
-		log.Fatalf("Failed to ping DB: %v", err)
+	maxRetries := 30
+	retryInterval := 2 * time.Second
+
+	for i := 0; i < maxRetries; i++ {
+		if err := Db.Ping(); err != nil {
+			log.Printf("Failed to ping DB (attempt %d/%d): %v", i+1, maxRetries, err)
+			if i == maxRetries-1 {
+				log.Fatalf("Failed to connect to DB after %d attempts", maxRetries)
+			}
+			time.Sleep(retryInterval)
+			continue
+		}
+		log.Println("Successfully connected to the database")
+		return
 	}
 }

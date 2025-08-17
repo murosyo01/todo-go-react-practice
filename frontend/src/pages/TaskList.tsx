@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     DndContext,
     useSensor,
@@ -11,11 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { useTasks } from "@/hooks/useTasks";
 import { Task, TaskFormValues } from "@/types/task";
-import { TaskCard } from "@/components/TaskCard";
-import { DroppableColumn } from "@/components/DroppableColumn";
-import { TaskFormDialog } from "@/components/TaskFormDialog";
-import { TaskActionDialog } from "@/components/TaskActionDialog";
-import { LoadingSpinner, ErrorMessage } from "@/components/LoadingSpinner";
+import { TaskCard } from "@/components/Task/TaskCard";
+import { DroppableColumn } from "@/components/Task/DroppableColumn";
+import { TaskFormDialog } from "@/components/Task/TaskFormDialog";
+import { TaskActionDialog } from "@/components/Task/TaskActionDialog";
+import { LoadingSpinner, ErrorMessage } from "@/components/Task/LoadingSpinner";
+import { getTaskByUser } from "@/services/taskService";
+import { getCurrentUser } from "@/services/authService";
 
 const columns = ["未着手", "進行中", "完了"] as const;
 
@@ -30,6 +32,15 @@ export default function TaskList() {
         updateTaskStatus,
         refreshTasks
     } = useTasks();
+
+    useEffect(() => {
+        const user = getCurrentUser();
+        if (!user?.id) {
+            window.location.href = '/login';
+            return;
+        }
+        refreshTasks(user.id);
+    }, [refreshTasks]);
 
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -105,7 +116,7 @@ export default function TaskList() {
     if (error) return <ErrorMessage error={error} onRetry={refreshTasks} />;
 
     return (
-        <div className="p-6 max-w-7xl mx-auto bg-gradient-to-r from-fuchsia-200 from-0% to-cyan-200 to-100%">
+        <div className="p-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-fuchsia-200 from-0% to-cyan-200 to-100%">
             <h1 className="text-3xl mb-6 font-bold text-gray-800">タスク一覧</h1>
 
             <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>

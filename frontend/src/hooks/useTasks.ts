@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Task, TaskFormValues } from "@/types/task";
+import { getCurrentUser } from "@/services/authService";
+import * as taskService from "@/services/taskService";
 
 interface UseTasksReturn {
     tasks: Task[];
@@ -9,7 +11,7 @@ interface UseTasksReturn {
     updateTask: (taskId: number, data: Partial<Task>) => Promise<void>;
     deleteTask: (taskId: number) => Promise<void>;
     updateTaskStatus: (taskId: number, newStatus: string) => Promise<void>;
-    refreshTasks: () => Promise<void>;
+    refreshTasks: (userId?: number) => Promise<void>;
 }
 
 export const useTasks = (): UseTasksReturn => {
@@ -17,15 +19,19 @@ export const useTasks = (): UseTasksReturn => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const refreshTasks = useCallback(async () => {
+    const refreshTasks = useCallback(async (userId?: number) => {
         try {
             setLoading(true);
             setError(null);
-            const response = await fetch("http://localhost:8080/tasks");
-            if (!response.ok) {
-                throw new Error(`Failed to fetch tasks: ${response.statusText}`);
+
+            const user = getCurrentUser();
+            const targetUserId = userId || user?.id;
+
+            if (!targetUserId) {
+                throw new Error("ユーザー情報が見つかりません");
             }
-            const fetchedTasks = await response.json();
+
+            const fetchedTasks = await taskService.getTaskByUser(targetUserId);
             setTasks(fetchedTasks);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Unknown error occurred");
@@ -38,15 +44,19 @@ export const useTasks = (): UseTasksReturn => {
         try {
             setLoading(true);
             setError(null);
-            const response = await fetch("http://localhost:8080/tasks", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
-            if (!response.ok) {
-                throw new Error(`Failed to create task: ${response.statusText}`);
+
+            const user = getCurrentUser();
+            if (!user?.id) {
+                throw new Error("ユーザー情報が見つかりません");
             }
-            await refreshTasks();
+
+            const taskData = {
+                ...data,
+                user_id: user.id
+            };
+
+            await taskService.createTask(taskData);
+            await refreshTasks(user.id);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to create task");
             throw err;
@@ -59,15 +69,13 @@ export const useTasks = (): UseTasksReturn => {
         try {
             setLoading(true);
             setError(null);
-            const response = await fetch(`http://localhost:8080/tasks/${taskId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
-            if (!response.ok) {
-                throw new Error(`Failed to update task: ${response.statusText}`);
+
+            await taskService.updateTask(taskId, data);
+
+            const user = getCurrentUser();
+            if (user?.id) {
+                await refreshTasks(user.id);
             }
-            await refreshTasks();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to update task");
             throw err;
@@ -80,13 +88,13 @@ export const useTasks = (): UseTasksReturn => {
         try {
             setLoading(true);
             setError(null);
-            const response = await fetch(`http://localhost:8080/tasks/${taskId}`, {
-                method: "DELETE",
-            });
-            if (!response.ok) {
-                throw new Error(`Failed to delete task: ${response.statusText}`);
+
+            await taskService.deleteTask(taskId);
+
+            const user = getCurrentUser();
+            if (user?.id) {
+                await refreshTasks(user.id);
             }
-            await refreshTasks();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to delete task");
             throw err;
@@ -98,17 +106,13 @@ export const useTasks = (): UseTasksReturn => {
     const updateTaskStatus = useCallback(async (taskId: number, newStatus: string) => {
         const task = tasks.find((t) => t.id === taskId);
         if (!task || task.status === newStatus) return;
-        
+
         try {
-            await updateTask(taskId, { ...task, status: newStatus });
+            await updateTask(taskId, { status: newStatus });
         } catch (err) {
             console.error("Failed to update task status:", err);
         }
     }, [tasks, updateTask]);
-
-    useEffect(() => {
-        refreshTasks();
-    }, [refreshTasks]);
 
     return {
         tasks,
